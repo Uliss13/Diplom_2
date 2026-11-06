@@ -9,9 +9,11 @@ from helpers import generate_user_payload
 class TestCreateUser:
 
     @allure.title("Успешное создание уникального пользователя")
-    def test_create_unique_user(self, user_payload):
+    def test_create_unique_user(self, cleanup_user):
         with allure.step("Отправка запроса на создание"):
-            response = register_user(user_payload)
+            payload = generate_user_payload()
+            response = register_user(payload)
+            cleanup_user(payload)  # Регистрируем для очистки
             
         with allure.step("Проверка ответа"):
             assert response.status_code == data.USER_CREATE_SUCCESS_STATUS
@@ -19,12 +21,9 @@ class TestCreateUser:
             assert "accessToken" in response.json()
 
     @allure.title("Ошибка при создании уже зарегистрированного пользователя")
-    def test_create_duplicate_user(self, user_payload):
-        with allure.step("Создание первого пользователя"):
-            register_user(user_payload)
-            
+    def test_create_duplicate_user(self, registered_user):
         with allure.step("Попытка создать дубликат"):
-            response = register_user(user_payload)
+            response = register_user(registered_user["payload"])
             
         with allure.step("Проверка ответа"):
             assert response.status_code == data.USER_CREATE_DUPLICATE_STATUS
